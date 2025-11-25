@@ -1,3 +1,4 @@
+from tabnanny import verbose
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,8 +10,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn import tree
+from sklearn.model_selection import RandomizedSearchCV
 
-
+plots = 'plots/'
 plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette('husl')
 
@@ -25,6 +27,25 @@ print('=== Dataset Info ===')
 print(df.info())
 print('\n=== Statistical Summary ===')
 df.describe()
+
+
+log_features = ['MedInc', 'AveRooms', 'AveBedrms', 'Population', 'AveOccup']
+for feature in log_features:
+    df[f'log_{feature}'] = np.log1p(df[feature])
+print(f'Log-transformed features: {", ".join([f"log_{f}" for f in log_features])}')
+
+for feature in log_features:
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3))
+    sns.histplot(df[feature], bins=40, ax=axes[0], color='#1f77b4')
+    axes[0].set_title(f'{feature} (original)')
+    sns.histplot(df[f'log_{feature}'], bins=40, ax=axes[1], color='#ff7f0e')
+    axes[1].set_title(f'log_{feature}')
+    for ax in axes:
+        ax.set_xlabel('')
+        ax.set_ylabel('Count')
+    fig.suptitle(f'Effect of log transform on {feature}')
+    plt.tight_layout()
+    fig.savefig(plots + f'log_transform_{feature}.png')
 
 missing = df.isnull().sum()
 missing_percent = (missing/len(df)) * 100
@@ -106,10 +127,39 @@ def evaluate_model(true,predicted):
     r2_square = r2_score(true,predicted)
     return mae,rmse,r2_square
 
+#Hyperparameter tuning
+rf_params = {
+    "max_depth": [5, 8, 15, None, 10],
+    "max_features": [5, 7, "auto", 8],
+    "min_samples_split": [2, 8, 15, 20],
+    "n_estimators": [100, 200, 500, 1000]
+}
+
+randomcv_models = [
+    ("RF",RandomForestRegressor(),rf_params)
+]
+
+# model_param = {}
+# for name,model,params in randomcv_models:
+#     random = RandomizedSearchCV(
+#         estimator=model,
+#         param_distributions=params,
+#         n_iter=10,
+#         cv=3,
+#         verbose=2,
+#         n_jobs=1
+#     )
+#     random.fit(X_train_scaled,y_train)
+#     model_param[name] = random.best_params_
+
+# for model_name in model_param:
+#     print(f"---------------- Best Params for {model_name} -------------------")
+#     print(model_param[model_name])
+
+
 models = {
     "Linear Regression": LinearRegression(),
-    "Decision Tree": DecisionTreeRegressor(),
-    "Random Forest": RandomForestRegressor()
+    "Random Forest": RandomForestRegressor(n_estimators=100, min_samples_split= 8, max_features=8, max_depth=None)
 }
 
 for i in range(len(list(models))):
@@ -135,6 +185,7 @@ for i in range(len(list(models))):
     
     print('='*35)
     print('\n')
+
 
 
 
