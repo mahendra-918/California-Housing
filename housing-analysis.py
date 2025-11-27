@@ -18,6 +18,26 @@ sns.set_palette('husl')
 
 df = pd.read_csv('data/housing.csv')
 
+renamed_cols = {
+    'longitude': 'Longitude',
+    'latitude': 'Latitude',
+    'housing_median_age': 'HouseAge',
+    'total_rooms': 'TotalRooms',
+    'total_bedrooms': 'TotalBedrooms',
+    'population': 'Population',
+    'households': 'Households',
+    'median_income': 'MedInc',
+    'median_house_value': 'MedHouseVal',
+    'ocean_proximity': 'OceanProximity'
+}
+
+df = df.rename(columns=renamed_cols)
+
+if df['TotalBedrooms'].isna().any():
+    df['TotalBedrooms'] = df['TotalBedrooms'].fillna(df['TotalBedrooms'].median())
+
+print(df.head())
+
 print(f"Dataset Shape: {df.shape}")
 print(f'Total Samples: {df.shape[0]}')
 print(f'Total Features: {df.shape[1]}')
@@ -29,10 +49,13 @@ print('\n=== Statistical Summary ===')
 df.describe()
 
 
-log_features = ['MedInc', 'AveRooms', 'AveBedrms', 'Population', 'AveOccup']
+log_features = ['MedInc', 'TotalRooms', 'TotalBedrooms', 'Population', 'Households']
 for feature in log_features:
     df[f'log_{feature}'] = np.log1p(df[feature])
 print(f'Log-transformed features: {", ".join([f"log_{f}" for f in log_features])}')
+
+
+df = pd.get_dummies(df, columns=['OceanProximity'], drop_first=True)
 
 for feature in log_features:
     fig, axes = plt.subplots(1, 2, figsize=(10, 3))
@@ -60,6 +83,8 @@ if missing.sum() == 0:
 else:
     print(f'\nTotal missing values: {missing.sum()}')
 
+
+print(df.head(5))
 
 plt.figure(figsize=(12,4))
 
@@ -139,27 +164,27 @@ randomcv_models = [
     ("RF",RandomForestRegressor(),rf_params)
 ]
 
-# model_param = {}
-# for name,model,params in randomcv_models:
-#     random = RandomizedSearchCV(
-#         estimator=model,
-#         param_distributions=params,
-#         n_iter=10,
-#         cv=3,
-#         verbose=2,
-#         n_jobs=1
-#     )
-#     random.fit(X_train_scaled,y_train)
-#     model_param[name] = random.best_params_
+model_param = {}
+for name,model,params in randomcv_models:
+    random = RandomizedSearchCV(
+        estimator=model,
+        param_distributions=params,
+        n_iter=10,
+        cv=3,
+        verbose=2,
+        n_jobs=1
+    )
+    random.fit(X_train_scaled,y_train)
+    model_param[name] = random.best_params_
 
-# for model_name in model_param:
-#     print(f"---------------- Best Params for {model_name} -------------------")
-#     print(model_param[model_name])
+for model_name in model_param:
+    print(f" Best Params for {model_name} ")
+    print(model_param[model_name])
 
 
 models = {
     "Linear Regression": LinearRegression(),
-    "Random Forest": RandomForestRegressor(n_estimators=100, min_samples_split= 8, max_features=8, max_depth=None)
+    "Random Forest": RandomForestRegressor(n_estimators=1000, min_samples_split= 20, max_features=7, max_depth=None)
 }
 
 for i in range(len(list(models))):
@@ -191,4 +216,4 @@ for i in range(len(list(models))):
 
 
 
-# plt.show()
+plt.show()

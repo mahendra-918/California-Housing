@@ -25,3 +25,11 @@ the goal is to predict California district median house values and compare linea
 - Generated comparison plots to visualize the effect of the log transform and stored them alongside the other figures in `plots/`.
 - Ran additional hyperparameter tuning experiments (starting from the baseline models) to see how the new features and tuned parameters impact accuracy.
 
+## Day 4: (pending)
+- 
+
+## Day 5: Full Dataset + Categorical Encoding
+- Swapped in the complete Kaggle housing dataset (now includes `OceanProximity`) and renamed columns to keep the existing code readable.
+- Patched the lone missing column (`TotalBedrooms`) via median imputation so no rows were dropped.
+- Updated the log-transform list for the new feature names, producing fresh `log_` columns for `MedInc`, `TotalRooms`, `TotalBedrooms`, `Population`, and `Households`.
+- One-hot encoded `OceanProximity` with `pd.get_dummies(..., drop_first=True)` so every model gets access to coastal vs inland signals without multicollinearity.
