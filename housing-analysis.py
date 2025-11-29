@@ -36,8 +36,6 @@ df = df.rename(columns=renamed_cols)
 if df['TotalBedrooms'].isna().any():
     df['TotalBedrooms'] = df['TotalBedrooms'].fillna(df['TotalBedrooms'].median())
 
-print(df.head())
-
 print(f"Dataset Shape: {df.shape}")
 print(f'Total Samples: {df.shape[0]}')
 print(f'Total Features: {df.shape[1]}')
@@ -189,12 +187,13 @@ models = {
 
 for i in range(len(list(models))):
     model = list(models.values())[i]
+    model_name = list(models.keys())[i]
     model.fit(X_train_scaled,y_train)
     y_train_pred = model.predict(X_train_scaled)
     y_test_pred = model.predict(X_test_scaled)
     model_train_mae , model_train_rmse, model_train_r2 = evaluate_model(y_train, y_train_pred)
     model_test_mae , model_test_rmse, model_test_r2 = evaluate_model(y_test, y_test_pred)
-    print(list(models.keys())[i])
+    print(model_name)
     
     print('Model performance for Training set')
     print("- Root Mean Squared Error: {:.4f}".format(model_train_rmse))
@@ -210,6 +209,42 @@ for i in range(len(list(models))):
     
     print('='*35)
     print('\n')
+    
+    # Residuals show how far off our predictions are from reality
+    residuals_test = y_test - y_test_pred
+    
+    
+    # This shows if predictions align with actual values (should be diagonal line)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Left plot: Predicted vs Actual
+    axes[0].scatter(y_test, y_test_pred, alpha=0.5, s=20)
+    # Add perfect prediction line (y=x)
+    min_val = min(y_test.min(), y_test_pred.min())
+    max_val = max(y_test.max(), y_test_pred.max())
+    axes[0].plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Prediction')
+    axes[0].set_xlabel('Actual House Value ($100,000s)')
+    axes[0].set_ylabel('Predicted House Value ($100,000s)')
+    axes[0].set_title(f'{model_name}: Predicted vs Actual')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+    
+    # Right plot: Residuals vs Predicted
+    # This checks for patterns in errors (should be random scatter)
+    axes[1].scatter(y_test_pred, residuals_test, alpha=0.5, s=20)
+    axes[1].axhline(y=0, color='r', linestyle='--', lw=2, label='Zero Error Line')
+    axes[1].set_xlabel('Predicted House Value ($100,000s)')
+    axes[1].set_ylabel('Residuals (Actual - Predicted)')
+    axes[1].set_title(f'{model_name}: Residuals vs Predicted')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    filename = f'residual_plots_{model_name.replace(" ", "_")}.png'
+    plt.savefig(plots + filename, dpi=150, bbox_inches='tight')
+    print(f'Saved residual plots: {filename}\n')
+    plt.close()  # Close figure to free memory
 
 
 
