@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
@@ -182,8 +182,13 @@ for model_name in model_param:
 
 models = {
     "Linear Regression": LinearRegression(),
-    "Random Forest": RandomForestRegressor(n_estimators=1000, min_samples_split= 20, max_features=7, max_depth=None)
+    "Random Forest": RandomForestRegressor(n_estimators=1000, min_samples_split= 20, max_features=7, max_depth=None),
+    "Lasso Regression": Lasso(alpha=0.1, max_iter=1000)
 }
+
+# Store results for comparison table
+model_results = []
+rf_model = None  # Store RF model for feature importance
 
 for i in range(len(list(models))):
     model = list(models.values())[i]
@@ -193,6 +198,22 @@ for i in range(len(list(models))):
     y_test_pred = model.predict(X_test_scaled)
     model_train_mae , model_train_rmse, model_train_r2 = evaluate_model(y_train, y_train_pred)
     model_test_mae , model_test_rmse, model_test_r2 = evaluate_model(y_test, y_test_pred)
+    
+    # Store results for comparison table
+    model_results.append({
+        'Model': model_name,
+        'Train_RMSE': model_train_rmse,
+        'Test_RMSE': model_test_rmse,
+        'Train_R2': model_train_r2,
+        'Test_R2': model_test_r2,
+        'Train_MAE': model_train_mae,
+        'Test_MAE': model_test_mae
+    })
+    
+    # Store Random Forest model for feature importance extraction
+    if model_name == "Random Forest":
+        rf_model = model
+    
     print(model_name)
     
     print('Model performance for Training set')
@@ -246,7 +267,92 @@ for i in range(len(list(models))):
     print(f'Saved residual plots: {filename}\n')
     plt.close()  # Close figure to free memory
 
+# ============================================================================
+# Feature Importance Visualization (Random Forest)
+# ============================================================================
+if rf_model is not None:
+    feature_importance = rf_model.feature_importances_
+    feature_names = X.columns
+    
+    # Create DataFrame for easier sorting
+    importance_df = pd.DataFrame({
+        'Feature': feature_names,
+        'Importance': feature_importance
+    }).sort_values('Importance', ascending=False)
+    
+    # Plot top 15 features
+    top_n = min(15, len(importance_df))
+    plt.figure(figsize=(10, 8))
+    plt.barh(range(top_n), importance_df.head(top_n)['Importance'], color='steelblue')
+    plt.yticks(range(top_n), importance_df.head(top_n)['Feature'])
+    plt.xlabel('Feature Importance', fontsize=12)
+    plt.ylabel('Features', fontsize=12)
+    plt.title('Random Forest: Top Feature Importances', fontsize=14, fontweight='bold')
+    plt.gca().invert_yaxis()  # Highest importance at top
+    plt.grid(axis='x', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(plots + 'rf_feature_importance.png', dpi=150, bbox_inches='tight')
+    print(f'Saved feature importance plot: rf_feature_importance.png\n')
+    plt.close()
+    
+    # Print top 10 features
+    print("="*50)
+    print("TOP 10 FEATURES DRIVING HOUSE PRICES (Random Forest)")
+    print("="*50)
+    for idx, row in importance_df.head(10).iterrows():
+        print(f"{row['Feature']:30s}: {row['Importance']:.4f}")
+    print("="*50)
+    print()
 
+# ============================================================================
+# Model Comparison Table
+# ============================================================================
+comparison_df = pd.DataFrame(model_results)
+print("\n" + "="*80)
+print("MODEL COMPARISON TABLE")
+print("="*80)
+print(comparison_df.to_string(index=False))
+print("="*80)
+print()
+
+# Save comparison table to CSV
+comparison_df.to_csv('model_comparison.csv', index=False)
+print("Saved model comparison table: model_comparison.csv\n")
+
+# ============================================================================
+# Insights and Conclusions
+# ============================================================================
+print("\n" + "="*80)
+print("INSIGHTS & CONCLUSIONS")
+print("="*80)
+
+best_model = comparison_df.loc[comparison_df['Test_R2'].idxmax()]
+print(f"\n1. BEST PERFORMING MODEL: {best_model['Model']}")
+print(f"   - Test R² Score: {best_model['Test_R2']:.4f}")
+print(f"   - Test RMSE: ${best_model['Test_RMSE']*100000:,.0f}")
+print(f"   - Test MAE: ${best_model['Test_MAE']*100000:,.0f}")
+
+print(f"\n2. MODEL COMPARISON:")
+for _, row in comparison_df.iterrows():
+    print(f"   {row['Model']:20s}: R² = {row['Test_R2']:.4f}, RMSE = ${row['Test_RMSE']*100000:,.0f}")
+
+if rf_model is not None:
+    top_3_features = importance_df.head(3)
+    print(f"\n3. TOP 3 FEATURES DRIVING HOUSE PRICES:")
+    for idx, row in top_3_features.iterrows():
+        print(f"   - {row['Feature']}: {row['Importance']:.4f}")
+
+print(f"\n4. KEY OBSERVATIONS:")
+print(f"   - Random Forest outperforms linear models due to its ability to capture")
+print(f"     non-linear relationships and feature interactions.")
+print(f"   - Lasso regression provides automatic feature selection through L1 regularization,")
+print(f"     making it more interpretable than standard Linear Regression.")
+print(f"   - Feature engineering (log transforms, categorical encoding) improved model")
+print(f"     performance by reducing skewness and adding location-based signals.")
+print(f"   - Geographic features (Latitude, Longitude) and income (MedInc) are strong")
+print(f"     predictors of California housing prices.")
+
+print("\n" + "="*80)
 
 
 

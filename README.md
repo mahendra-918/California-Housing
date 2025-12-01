@@ -25,11 +25,19 @@ the goal is to predict California district median house values and compare linea
 - Generated comparison plots to visualize the effect of the log transform and stored them alongside the other figures in `plots/`.
 - Ran additional hyperparameter tuning experiments (starting from the baseline models) to see how the new features and tuned parameters impact accuracy.
 
-## Day 4: (pending)
-- 
+## Day 4: Documentation & Learning
+- Reviewed scikit-learn documentation on preprocessing pipelines, model evaluation, and hyperparameter tuning.
+- Watched ML fundamentals lectures to strengthen understanding of linear models, decision trees, and ensemble methods.
+- Focused on understanding bias-variance trade-offs, regularization concepts, and how different models react to feature scaling.
 
 ## Day 5: Full Dataset + Categorical Encoding
 - Swapped in the complete Kaggle housing dataset (now includes `OceanProximity`) and renamed columns to keep the existing code readable.
 - Patched the lone missing column (`TotalBedrooms`) via median imputation so no rows were dropped.
 - Updated the log-transform list for the new feature names, producing fresh `log_` columns for `MedInc`, `TotalRooms`, `TotalBedrooms`, `Population`, and `Households`.
 - One-hot encoded `OceanProximity` with `pd.get_dummies(..., drop_first=True)` so every model gets access to coastal vs inland signals without multicollinearity.
+
+## Day 6: Residual Analysis & Model Diagnostics
+- Implemented residual plots for both Linear Regression and Random Forest models.
+- Created "Predicted vs Actual" scatter plots with perfect prediction line to visualize model accuracy.
+- Generated "Residuals vs Predicted" plots to check for heteroscedasticity and error patterns.
+- Saved diagnostic plots to `plots/` folder for both models, completing Week 2 PRD requirement for residual analysis.
