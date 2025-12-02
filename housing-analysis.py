@@ -230,7 +230,7 @@ for i in range(len(list(models))):
     
     print('='*35)
     print('\n')
-    
+
     # Residuals show how far off our predictions are from reality
     residuals_test = y_test - y_test_pred
     
